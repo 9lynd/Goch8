@@ -50,7 +50,7 @@ func main() {
 		log.Fatalf("Error loading ROM: %v", err)
 	}
 
-	const maxCycles = 2000
+	const maxCycles = 5000
 	for i := 0; i < maxCycles; i++ {
 		if err := cpu.Cycle(); err != nil {
 			log.Printf("Stopped: %v", err)
@@ -59,7 +59,6 @@ func main() {
 		if cpu.Display.Dirty {
 			if anyPixel(cpu.Display) {
 				render(cpu.Display)
-				break
 			}
 			cpu.Display.Dirty = false
 		}
