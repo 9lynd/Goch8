@@ -16,8 +16,8 @@ func (d *Display) Clear() {
 }
 
 func (d *Display) TogglePixel(x, y byte) bool {
-	wx := uint16(x) % Height
-	wy := uint16(y) % Width
+	wx := uint16(x) % Width
+	wy := uint16(y) % Height
 	idx := wy*Width + wx
 	erased := d.Pixels[idx]
 	d.Pixels[idx] = !d.Pixels[idx]
