@@ -70,3 +70,13 @@ func (c *CPU) TickTimers() {
 		c.SoundTimer--
 	}
 }
+
+func (c *CPU) Execute(opcode uint16) error {
+	nnn := opcode & 0x0FFF
+	n := byte(opcode & 0x000F)
+	x := byte((opcode & 0x0F00) >> 8)
+	y := byte((opcode & 0x00F0) >> 4)
+	kk := byte(opcode & 0x00FF)
+
+	return nil
+}
