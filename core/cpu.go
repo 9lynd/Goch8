@@ -26,8 +26,8 @@ var fontset = [80]byte{
 const fontsetStart = 0x050
 
 type CPU struct {
-	v      [16]byte
-	I      uint8
+	V      [16]byte
+	I      uint16
 	PC     uint16
 	SP     uint8
 	Stack  [16]uint16
@@ -71,12 +71,61 @@ func (c *CPU) TickTimers() {
 	}
 }
 
-func (c *CPU) Execute(opcode uint16) error {
+func (c *CPU) Cycle() error {
+	// 2 bytes, big-endian
+	hi := c.Memory[c.PC]
+	lo := c.Memory[c.PC+1]
+	opcode := uint16(hi)<<8 | uint16(lo)
+	c.PC += 2
+	return c.execute(opcode)
+}
+
+func (c *CPU) execute(opcode uint16) error {
 	nnn := opcode & 0x0FFF
 	n := byte(opcode & 0x000F)
 	x := byte((opcode & 0x0F00) >> 8)
 	y := byte((opcode & 0x00F0) >> 4)
 	kk := byte(opcode & 0x00FF)
 
+	switch opcode & 0xF000 {
+	case 0x0000:
+		switch opcode {
+		case 0x00E0:
+			c.Display.Clear()
+		case 0x00EE:
+			c.SP--
+			c.PC = c.Stack[c.SP]
+		default:
+			return fmt.Errorf("unknown opcode: 0x%04X", opcode)
+		}
+
+	case 0x1000:
+		// Jump to nnn
+		c.PC = nnn
+
+	case 0x6000:
+		c.V[x] = kk
+
+	case 0x7000:
+		c.V[x] += kk
+
+	case 0xA000:
+		c.I = nnn
+
+	case 0xD000:
+		// DRW Vx, Vy, n -> draw n-byte sprite at (Vx, Vy)
+		c.V[0xF] = 0
+		for row := byte(0); row < n; row++ {
+			spriteByte := c.Memory[c.I+uint16(row)]
+			for col := byte(0); col < 8; col++ {
+				if spriteByte&(0x80>>col) != 0 {
+					erased := c.Display.TogglePixel(c.V[x]+col, c.V[y]+row)
+					if erased {
+						c.V[0xF] = 1
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
